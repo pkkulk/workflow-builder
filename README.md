@@ -183,16 +183,6 @@ This project strengthened skills in:
 
 ---
 
-## 🤖 AI Assistance Disclosure
-
-AI tools were used for:
-
-* Planning logic
-* UI improvement ideas
-
-All core logic, state handling, and integration were reviewed and adjusted manually to meet assignment constraints and correctness.
-
----
 
 ## 👤 Author
 
