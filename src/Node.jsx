@@ -1,20 +1,32 @@
 import React from 'react';
 
+/**
+ * Node Component
+ * Recursively renders the workflow tree.
+ * Handles:
+ * - Rendering different node shapes based on type
+ * - Inline editing of labels
+ * - Adding child nodes (popover menu)
+ * - Deleting nodes
+ */
 const Node = ({ id, nodes, onAdd, onDelete, onUpdate }) => {
     const node = nodes[id];
     if (!node) return null;
 
     const handleLabelChange = (e) => {
-        onUpdate(id, { label: e.target.innerText });
+        // Only update if changes were made
+        if (node.label !== e.target.innerText) {
+            onUpdate(id, { label: e.target.innerText });
+        }
     };
 
     const renderAddButton = (slot = null) => (
         <div className="add-button-group">
             <button className="add-btn" title="Add Node">+</button>
             <div className="dropdown">
-                <button onClick={() => onAdd(id, 'action', slot)}>Action</button>
-                <button onClick={() => onAdd(id, 'branch', slot)}>Branch</button>
-                <button onClick={() => onAdd(id, 'end', slot)}>End</button>
+                <button title="Action" onClick={() => onAdd(id, 'action', slot)}>Action</button>
+                <button title="Branch" onClick={() => onAdd(id, 'branch', slot)}>Branch</button>
+                <button title="End" onClick={() => onAdd(id, 'end', slot)}>End</button>
             </div>
         </div>
     );
@@ -27,15 +39,21 @@ const Node = ({ id, nodes, onAdd, onDelete, onUpdate }) => {
                     contentEditable={node.type !== 'start' && node.type !== 'end'}
                     suppressContentEditableWarning={true}
                     onBlur={handleLabelChange}
+                    title="Click to edit label"
                 >
                     {node.label}
                 </div>
 
                 {node.type !== 'start' && node.type !== 'end' && (
-                    <button className="delete-btn" onClick={() => onDelete(id)}>×</button>
+                    <button
+                        className="delete-btn"
+                        onClick={() => onDelete(id)}
+                        title="Delete Node"
+                    >×</button>
                 )}
             </div>
 
+            {/* Recursive Children Rendering */}
             {node.type === 'branch' ? (
                 <div className="branch-children">
                     <div className="branch-path">
