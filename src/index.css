@@ -432,25 +432,18 @@ h1 {
   content: '🛑';
 }
 
-/* INSERT TRIGGER STYLES */
-
 .insert-trigger-container {
   position: absolute;
   top: -20px;
-  /* Moves it up into the connector area */
   left: 50%;
   transform: translateX(-50%);
   z-index: 50;
-  /* Ensures it sits on top of the connection line ::before pseudo-element */
 }
 
-/* Branch path specificity */
 .branch-path>.insert-trigger-container {
   top: -10px;
-  /* Slight adjustment for branches */
 }
 
-/* Insert Mode Specifics */
 .add-button-group.insert-mode .add-btn {
   width: 20px;
   height: 20px;
@@ -458,12 +451,10 @@ h1 {
   background: #eee;
   border-color: #ddd;
   opacity: 0;
-  /* Hidden by default */
   transform: scale(0.8);
   color: #888;
 }
 
-/* Hovering the container shows the button */
 .insert-trigger-container:hover .add-btn {
   opacity: 1;
   transform: scale(1);
@@ -472,7 +463,6 @@ h1 {
   color: #2196f3;
 }
 
-/* When insert menu open, keep visible */
 .add-button-group.insert-mode:hover .add-btn {
   opacity: 1;
   transform: rotate(90deg) scale(1);
@@ -480,7 +470,6 @@ h1 {
   color: #fff;
 }
 
-/* Adjust dropdown for insert mode */
 .add-button-group.insert-mode .dropdown {
   top: 150%;
 }
