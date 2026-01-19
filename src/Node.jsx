@@ -1,20 +1,10 @@
 import React from 'react';
 
-/**
- * Node Component
- * Recursively renders the workflow tree.
- * Handles:
- * - Rendering different node shapes based on type
- * - Inline editing of labels
- * - Adding child nodes (popover menu)
- * - Deleting nodes
- */
 const Node = ({ id, nodes, onAdd, onDelete, onUpdate }) => {
     const node = nodes[id];
     if (!node) return null;
 
     const handleLabelChange = (e) => {
-        // Only update if changes were made
         if (node.label !== e.target.innerText) {
             onUpdate(id, { label: e.target.innerText });
         }
@@ -53,7 +43,6 @@ const Node = ({ id, nodes, onAdd, onDelete, onUpdate }) => {
                 )}
             </div>
 
-            {/* Recursive Children Rendering */}
             {node.type === 'branch' ? (
                 <div className="branch-children">
                     <div className="branch-path">

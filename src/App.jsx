@@ -2,13 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import Node from './Node'
 import './App.css'
 
-/**
- * Main Application Component
- * Manages workflow state, history (undo/redo), and validation.
- */
 function App() {
-  // --- State Management ---
-  // Using a history object to track past, present, and future states for Undo/Redo
   const [history, setHistory] = useState({
     past: [],
     present: {
@@ -17,9 +11,8 @@ function App() {
     future: []
   });
 
-  const [toast, setToast] = useState(null); // Simple toast notification message
+  const [toast, setToast] = useState(null);
 
-  // Helper to update state with history tracking
   const updateNodes = (newNodes, addToHistory = true) => {
     setHistory(prev => {
       if (addToHistory) {
@@ -34,7 +27,6 @@ function App() {
     });
   };
 
-  // --- Undo / Redo Logic ---
   const handleUndo = () => {
     setHistory(prev => {
       if (prev.past.length === 0) return prev;
@@ -61,25 +53,15 @@ function App() {
     });
   };
 
-  // --- Helpers ---
   const generateId = () => Math.random().toString(36).substr(2, 9);
   const showToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
   };
 
-  // --- Actions ---
-
-  /**
-   * Adds a new node to the workflow.
-   * @param {string} parentId - ID of the parent node.
-   * @param {string} childType - Type of node to add (action, branch, end).
-   * @param {string|null} slot - 'true' or 'false' for branch slots, null otherwise.
-   */
   const handleAdd = (parentId, childType, slot = null) => {
     const parent = history.present[parentId];
 
-    // Validation: Cannot add to End node (though UI hides it, good to enforce)
     if (parent.type === 'end') {
       showToast("Cannot add children to an End node.");
       return;
@@ -97,7 +79,6 @@ function App() {
 
     const newNodes = { ...history.present, [newId]: newNode };
 
-    // Update parent reference
     if (parent.type === 'branch') {
       if (slot === 'true') newNodes[parentId] = { ...parent, trueId: newId };
       else if (slot === 'false') newNodes[parentId] = { ...parent, falseId: newId };
@@ -108,10 +89,6 @@ function App() {
     updateNodes(newNodes);
   };
 
-  /**
-   * Deletes a node and reconnects its children.
-   * @param {string} id - ID of the node to delete.
-   */
   const handleDelete = (id) => {
     if (id === 'root') {
       showToast("Cannot delete the Start node.");
@@ -121,7 +98,6 @@ function App() {
     const newNodes = { ...history.present };
     const nodeToDelete = newNodes[id];
 
-    // Find parent
     let parentId = Object.keys(newNodes).find(key => {
       const n = newNodes[key];
       return n.childId === id || n.trueId === id || n.falseId === id;
@@ -131,16 +107,13 @@ function App() {
 
     const parent = newNodes[parentId];
 
-    // Determine successor (reconnection logic)
     let successorId = null;
     if (nodeToDelete.type === 'branch') {
-      // Logic: Promote True path, discard False path (simple reconnection)
       successorId = nodeToDelete.trueId || nodeToDelete.falseId;
     } else {
       successorId = nodeToDelete.childId;
     }
 
-    // Update parent to point to successor
     if (parent.type === 'branch') {
       if (parent.trueId === id) newNodes[parentId] = { ...parent, trueId: successorId };
       else if (parent.falseId === id) newNodes[parentId] = { ...parent, falseId: successorId };
@@ -152,26 +125,18 @@ function App() {
     updateNodes(newNodes);
   };
 
-  /**
-   * Updates a node's properties (e.g., label).
-   */
   const handleUpdate = (id, newProps) => {
     const newNodes = {
       ...history.present,
       [id]: { ...history.present[id], ...newProps }
     };
-    // For text updates, we might want to debounce history or only save on blur. 
-    // Here we save on every commit (blur) passed from Node.
     updateNodes(newNodes);
   };
-
-  // --- Save / Load ---
 
   const handleSave = () => {
     const json = JSON.stringify(history.present, null, 2);
     console.log("Saved Workflow:", json);
 
-    // Download file
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -183,7 +148,6 @@ function App() {
   };
 
   const handleLoadExample = () => {
-    // Example: Start -> Action -> Branch -> (True: Action | False: End)
     const exampleNodes = {
       'root': { id: 'root', type: 'start', label: 'Start Request', childId: 'node1' },
       'node1': { id: 'node1', type: 'action', label: 'Validate Data', childId: 'node2' },
@@ -200,7 +164,6 @@ function App() {
     <div className="App">
       <h1>Workflow Builder</h1>
 
-      {/* Toolbar */}
       <div className="toolbar">
         <div className="group">
           <button onClick={handleSave}>Save Workflow</button>
