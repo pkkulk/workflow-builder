@@ -36,7 +36,6 @@ const Node = ({ id, nodes, onAdd, onDelete, onUpdate }) => {
                 )}
             </div>
 
-            {/* Children Rendering */}
             {node.type === 'branch' ? (
                 <div className="branch-children">
                     <div className="branch-path">
