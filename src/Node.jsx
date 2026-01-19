@@ -10,13 +10,17 @@ const Node = ({ id, nodes, onAdd, onDelete, onUpdate }) => {
         }
     };
 
-    const renderAddButton = (slot = null) => (
-        <div className="add-button-group">
-            <button className="add-btn" title="Add Node">+</button>
+    const renderAddButton = (slot = null, isInsert = false) => (
+        <div className={`add-button-group ${isInsert ? 'insert-mode' : ''}`}>
+            {isInsert ? (
+                <button className="add-btn insert-btn" title="Insert Node">+</button>
+            ) : (
+                <button className="add-btn" title="Add Node">+</button>
+            )}
             <div className="dropdown">
-                <button title="Action" onClick={() => onAdd(id, 'action', slot)}>Action</button>
-                <button title="Branch" onClick={() => onAdd(id, 'branch', slot)}>Branch</button>
-                <button title="End" onClick={() => onAdd(id, 'end', slot)}>End</button>
+                <button title="Action" onClick={() => onAdd(id, 'action', slot, isInsert)}>Action</button>
+                <button title="Branch" onClick={() => onAdd(id, 'branch', slot, isInsert)}>Branch</button>
+                <button title="End" onClick={() => onAdd(id, 'end', slot, isInsert)}>End</button>
             </div>
         </div>
     );
@@ -48,38 +52,53 @@ const Node = ({ id, nodes, onAdd, onDelete, onUpdate }) => {
                     <div className="branch-path">
                         <div className="branch-label">True</div>
                         {node.trueId ? (
-                            <Node
-                                id={node.trueId}
-                                nodes={nodes}
-                                onAdd={onAdd}
-                                onDelete={onDelete}
-                                onUpdate={onUpdate}
-                            />
+                            <>
+                                <div className="insert-trigger-container">
+                                    {renderAddButton('true', true)}
+                                </div>
+                                <Node
+                                    id={node.trueId}
+                                    nodes={nodes}
+                                    onAdd={onAdd}
+                                    onDelete={onDelete}
+                                    onUpdate={onUpdate}
+                                />
+                            </>
                         ) : renderAddButton('true')}
                     </div>
                     <div className="branch-path">
                         <div className="branch-label">False</div>
                         {node.falseId ? (
-                            <Node
-                                id={node.falseId}
-                                nodes={nodes}
-                                onAdd={onAdd}
-                                onDelete={onDelete}
-                                onUpdate={onUpdate}
-                            />
+                            <>
+                                <div className="insert-trigger-container">
+                                    {renderAddButton('false', true)}
+                                </div>
+                                <Node
+                                    id={node.falseId}
+                                    nodes={nodes}
+                                    onAdd={onAdd}
+                                    onDelete={onDelete}
+                                    onUpdate={onUpdate}
+                                />
+                            </>
                         ) : renderAddButton('false')}
                     </div>
                 </div>
             ) : (
                 <div className="single-child">
                     {node.childId ? (
-                        <Node
-                            id={node.childId}
-                            nodes={nodes}
-                            onAdd={onAdd}
-                            onDelete={onDelete}
-                            onUpdate={onUpdate}
-                        />
+                        <>
+                            <div className="insert-trigger-container">
+                                {renderAddButton(null, true)}
+                            </div>
+                            <Node
+                                id={node.childId}
+                                nodes={nodes}
+                                onAdd={onAdd}
+                                onDelete={onDelete}
+                                onUpdate={onUpdate}
+                            />
+                        </>
                     ) : node.type !== 'end' ? (
                         renderAddButton()
                     ) : null}

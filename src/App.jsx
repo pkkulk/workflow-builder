@@ -59,7 +59,7 @@ function App() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleAdd = (parentId, childType, slot = null) => {
+  const handleAdd = (parentId, childType, slot = null, insert = false) => {
     const parent = history.present[parentId];
 
     if (parent.type === 'end') {
@@ -79,11 +79,44 @@ function App() {
 
     const newNodes = { ...history.present, [newId]: newNode };
 
-    if (parent.type === 'branch') {
-      if (slot === 'true') newNodes[parentId] = { ...parent, trueId: newId };
-      else if (slot === 'false') newNodes[parentId] = { ...parent, falseId: newId };
+    // Insertion Logic
+    // Insertion Logic
+    if (insert) {
+      if (childType === 'end') {
+        showToast("Cannot insert End node in the middle.");
+        return;
+      }
+
+      let oldChild = null;
+      if (parent.type === 'branch') {
+        if (slot === 'true') oldChild = parent.trueId;
+        else if (slot === 'false') oldChild = parent.falseId;
+      } else {
+        oldChild = parent.childId;
+      }
+
+      // Attach old child to new node
+      if (childType === 'branch') {
+        newNode.trueId = oldChild;
+      } else {
+        newNode.childId = oldChild;
+      }
+
+      // Update parent to point to new node
+      if (parent.type === 'branch') {
+        if (slot === 'true') newNodes[parentId] = { ...parent, trueId: newId };
+        else if (slot === 'false') newNodes[parentId] = { ...parent, falseId: newId };
+      } else {
+        newNodes[parentId] = { ...parent, childId: newId };
+      }
     } else {
-      newNodes[parentId] = { ...parent, childId: newId };
+      // Standard Add (Append)
+      if (parent.type === 'branch') {
+        if (slot === 'true') newNodes[parentId] = { ...parent, trueId: newId };
+        else if (slot === 'false') newNodes[parentId] = { ...parent, falseId: newId };
+      } else {
+        newNodes[parentId] = { ...parent, childId: newId };
+      }
     }
 
     updateNodes(newNodes);
