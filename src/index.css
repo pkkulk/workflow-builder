@@ -1,0 +1,648 @@
+:root {
+  --line-color: #aaa;
+  --line-thickness: 2px;
+  --node-bg: #fff;
+  --text-color: #333;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --radius-pill: 25px;
+  --radius-card: 8px;
+  --action-border: #e0e0e0;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #f8f9fa;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  color: var(--text-color);
+  min-height: 100vh;
+}
+
+.App {
+  padding: 40px;
+  text-align: center;
+  width: 100%;
+}
+
+h1 {
+  margin-bottom: 40px;
+  color: #2c3e50;
+}
+
+/* Workflow Container centered */
+.workflow-container {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+/* Base Node Wrapper */
+.node-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+/* Vertical Lines */
+.node-wrapper::before {
+  content: '';
+  width: var(--line-thickness);
+  background-color: var(--line-color);
+  height: 30px;
+  /* Spacing */
+}
+
+/* No line above root start node */
+.node-wrapper.start::before {
+  display: none;
+}
+
+/* Node Content Area */
+.node-content {
+  position: relative;
+  margin-bottom: 30px;
+  /* Space below node for line/buttons */
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* DEFAULT Node Styling (Action) */
+.node-box {
+  background: var(--node-bg);
+  padding: 12px 24px;
+  min-width: 100px;
+  text-align: center;
+  border: 1px solid var(--action-border);
+  position: relative;
+  z-index: 2;
+  font-weight: 500;
+  outline: none;
+  transition: all 0.2s;
+  /* Card Sytle */
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow);
+}
+
+.node-box:focus {
+  border-color: #2196f3;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+}
+
+/* --- Node Types --- */
+
+/* Start Node: Pill */
+.node-wrapper.start .node-box {
+  border-radius: var(--radius-pill);
+  background-color: #e3f2fd;
+  border-color: #bbdefb;
+  color: #1565c0;
+  font-weight: bold;
+  padding: 10px 30px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  /* Softer shadow */
+}
+
+/* End Node: Red Circle */
+.node-wrapper.end .node-content {
+  margin-bottom: 0;
+  /* Ends don't have children usually */
+}
+
+.node-wrapper.end .node-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #ffebee;
+  border: 2px solid #ef5350;
+  color: #b71c1c;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: unset;
+  /* Override default */
+  box-shadow: none;
+  font-size: 12px;
+  overflow: hidden;
+}
+
+/* Branch Node: Diamond */
+.node-wrapper.branch .node-box {
+  width: 80px;
+  height: 80px;
+  padding: 0;
+  min-width: unset;
+  border-radius: 4px;
+  /* Slight rounded corners for diamond */
+  background: #fff;
+  border: 2px solid #ffb74d;
+  box-shadow: var(--shadow);
+  /* The rotation trick - visuals only */
+  transform: rotate(45deg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 10px;
+  /* Extra space for rotation */
+}
+
+/* Counter-rotate text inside branch */
+/* Since node-box is contentEditable and holds the text directly, 
+   the text itself will be rotated. 
+   We need to ensure the text is wrapped or handle it. 
+   Currently Node.jsx has {node.label} inside .node-box. 
+   We can rotate the node-box content itself? 
+   No, contentEditable text is a child text node. 
+   
+   CSS Solution:
+   We can target the node-box for the shape, but apply the rotation to a pseudo-element?
+   No, pseudo-elements can't easily be the only thing with background/border while the parent has none, 
+   because content stays in parent. 
+   
+   Better: Rotate .node-box, and rotate the internal text node? You can't rotate a text node directly.
+   However, since it is a flex container, we can't just rotate 'everything inside'.
+   
+   If we can't change HTML structure easily now, we can use `writing-mode` or other tricks? No.
+   
+   Let's check Node.jsx structure again. 
+   <div className="node-box" ... > {node.label} </div>
+   
+   If I rotate .node-box, the text rotates.
+   I should modify Node.jsx to wrap the label in a span.
+   OR I use `background-image` for the diamond shape?
+   OR `clip-path`?
+   
+   Let's use clip-path for now as it doesn't rotate text?
+   clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+   background: white; border: ...;
+   Problem: Border is cut off by clip-path. 
+   
+   Let's modify Node.jsx first to wrap label in a <span> so we can counter-rotate.
+   Actually, I can do it in this step if I update Node.jsx.
+   Wait, the user said "Use only CSS for layout".
+   But "Create: Node.jsx component ... Add CSS styles" was previous prompt.
+   "Improve UI styling ... Do not change logic, only CSS and layout."
+   Changing HTML structure for styling purposes (wrapping text) is borderline but usually verifying 'logic' means don't change how it Works.
+   
+   Let's try a CSS only approach if possible.
+   :before pseudo element for shape?
+   .node-box {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+   }
+   .node-box::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: white;
+      border: 2px solid #ffb74d;
+      transform: rotate(45deg);
+      z-index: -1;
+      border-radius: 4px;
+      box-shadow: var(--shadow);
+   }
+   This works perfectly! The text stays straight.
+   Need to ensure sizing is square for the diamond to look right.
+*/
+
+.node-wrapper.branch .node-box {
+  width: 60px;
+  height: 60px;
+  min-width: 60px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  overflow: visible;
+  /* Allow shadow */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 10px 0;
+}
+
+.node-wrapper.branch .node-box::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: #fff3e0;
+  border: 2px solid #ffb74d;
+  transform: rotate(45deg);
+  z-index: -1;
+  border-radius: 4px;
+  box-shadow: var(--shadow);
+  transition: all 0.2s;
+}
+
+.node-wrapper.branch .node-box:focus::before {
+  border-color: #2196f3;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+}
+
+/* Delete Button */
+.delete-btn {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: #fff;
+  color: #f44336;
+  border: 1px solid #f44336;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  z-index: 100;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+  opacity: 0;
+  /* Hide by default, show on hover */
+}
+
+.node-content:hover .delete-btn {
+  opacity: 1;
+}
+
+.delete-btn:hover {
+  background: #f44336;
+  color: white;
+  transform: scale(1.1);
+}
+
+/* Connecting Lines */
+
+.single-child::before {
+  content: '';
+  width: var(--line-thickness);
+  background-color: var(--line-color);
+  height: 30px;
+  position: absolute;
+  top: -30px;
+  z-index: 0;
+}
+
+/* Branch Children Layout */
+.branch-children {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 60px;
+  /* Improved spacing */
+  padding-top: 30px;
+  /* Space for horizontal bar */
+  position: relative;
+}
+
+/* Horizontal line for branch */
+/* The "Horizontal Bar" */
+.branch-children::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  /* Doesn't help width */
+  /* We need the line to span from the center of the left child to the center of the right child */
+  /* Tricky with pure CSS unless we know widths. 
+       However, we can use the technique:
+       Each child has a top border that covers 50% pointing inwards.
+    */
+  display: none;
+}
+
+/* Line coming down from the branch node to the split point */
+.node-wrapper.branch::after {
+  content: '';
+  position: absolute;
+  bottom: -30px;
+  /* Match padding/margin */
+  left: 50%;
+  width: var(--line-thickness);
+  height: 30px;
+  background-color: var(--line-color);
+  z-index: 0;
+}
+
+.branch-path {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+/* Horizontal connections */
+.branch-path::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 50%;
+  width: 50%;
+  height: 2px;
+  background-color: var(--line-color);
+}
+
+.branch-path::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  /* Horizontal line at top of container */
+  left: 50%;
+  width: 50%;
+  /* Just overshoot, effectively 50% towards sibling */
+  height: 2px;
+  background-color: var(--line-color);
+}
+
+/* Vertical line down to content */
+/* We need another pseudo element or reuse one. 
+   Actually, .branch-path is the container. 
+   Its children (node, or add button) have a top margin/padding.
+   
+   Structure:
+   Branch Node 
+      | (::after on branch node)
+   [Horizontal Bar container (branch-children top)]
+      | (child connection)
+   Child Node
+   
+   If we use ::before/::after on branch-path to draw the horizontal lines:
+   Left Child: Line from Right-Edge to Center-Top (approx right:0 width:50%?)
+   Right Child: Line from Left-Edge to Center-Top
+   
+   Correct logic for standard tree:
+   .branch-path::before -> Horizontal line towards parent center
+   .branch-path::after -> Vertical line down to child
+   
+   Wait, .branch-path IS the container for the child subtree.
+   Current node is inside .branch-path? No, .branch-path contains Label + (Node OR AddButton).
+*/
+
+.branch-path::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  height: 30px;
+  /* vertical part? No. */
+  border-top: var(--line-thickness) solid var(--line-color);
+  width: 50%;
+}
+
+/* First child (True): Line goes from Center to Right */
+.branch-path:first-child::before {
+  right: 0;
+  /* Start at right edge */
+  width: 50%;
+  /* Go 50% in (to center) */
+  /* Wait, flex item. 50% width relates to the item width. 
+       So it draws a line from center to right edge. */
+  left: 50%;
+  border-left: var(--line-thickness) solid var(--line-color);
+  /* Corner piece? */
+  /* No. 
+       We need a T shape upside down.
+       Parent -> |
+       Split ->  +-------+
+                 |       |
+               Child   Child
+       
+       So Parent::after draws the first |.
+       Branch-children padding-top creates the gap.
+       
+       Now for the horiz bar and drop downs.
+       Use :before on the branch-path to draw the horiz segment and the corner.
+    */
+  display: none;
+  /* Reset */
+}
+
+/* New Logic for Branch Lines */
+
+/* Common vertical line down from the crossbar to the child content */
+.branch-path>.node-wrapper::before,
+.branch-path>.add-button-group::before {
+  /* Existing ::before on node-wrapper handles the top vertical line.
+       We just need to make sure it reaches the top of the branch-path container.
+       branch-path has 0 padding? No.
+    */
+}
+
+.branch-path {
+  padding-top: 20px;
+  /* Space for the line coming down from crossbar */
+}
+
+/* The Horizontal Connectors */
+.branch-path::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 20px;
+  /* Drop height */
+  border-top: var(--line-thickness) solid var(--line-color);
+}
+
+/* Left Child (True) */
+.branch-path:first-child::before {
+  left: 50%;
+  /* Start at center */
+  width: 50%;
+  /* Extend to right edge? No, this moves it to the right half. */
+  /* We want the line on the RIGHT side of the center for the LEFT child?
+       No, the LEFT child needs a line from its CENTER to the RIGHT edge (towards parent center).
+    */
+  left: auto;
+  right: 0;
+  width: 50%;
+  border-right: var(--line-thickness) solid var(--line-color);
+  /* Corner */
+  /* This draws | right at the edge. But we want it at the center of the child. 
+       So border-right is wrong unless the child is aligned right. 
+       
+       Let's stick to:
+       Horizontal line from Center of child to Edge (towards sibling).
+       Vertical line from Top to Center (border-left or right).
+    */
+  border-right: none;
+}
+
+/* Let's try explicit logic used in trees */
+.branch-path::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 50%;
+  width: 50%;
+  border-top: var(--line-thickness) solid var(--line-color);
+  height: 20px;
+  border-right: var(--line-thickness) solid var(--line-color);
+  /* Connect down */
+  /* This draws a line from left-edge (implied) to center? No.
+       right: 50% means the right edge of the pseudo element is at the center of the container.
+       width: 50% means it spans from left-edge to center.
+       border-top: draws line across that span.
+       border-right: draws vertical line at center.
+       
+       This works for the RIGHT child (connecting leftwards).
+    */
+}
+
+/* Right Child (False) */
+.branch-path:last-child::before {
+  right: auto;
+  left: 50%;
+  /* Starts at center */
+  width: 50%;
+  /* Goes to right edge */
+  border-left: var(--line-thickness) solid var(--line-color);
+  /* Vertical line at center */
+  border-right: none;
+  /* This draws line from center to right?
+       Yes. And vertical at center. 
+       Perfect.
+    */
+}
+
+/* But we need them to connect to the Parent's center.
+   The parent center is between the two children.
+   The gap is handled by flex gap.
+   So:
+   Left child (First): Line from Center to Right-Edge.
+   Right child (Last): Line from Left-Edge to Center.
+   
+   My previous block for Right Child:
+   left: 50% (start at center)
+   width: 50% (end at right edge)
+   border-top (draws the horiz line)
+   border-left (draws vertical at center).
+   
+   Wait, border-left is at the LEFT of the element.
+   So it draws vertical at center. 
+   And border-top draws line from center to right.
+   This connects Center-Child to Right-Edge-Child?
+   No, we want Center-Child to Left-Edge-Child (towards parent).
+   
+   So for LAST child (Right side):
+   We want line from Center to Left-Edge.
+   Position: left: 0; width: 50%; 
+   Border-right: vertical at center.
+   Border-top: line from left to center.
+   
+   For FIRST child (Left side):
+   We want line from Center to Right-Edge.
+   Position: right: 0; width: 50%;
+   Border-left: vertical at center.
+   Border-top: line from center to right.
+*/
+
+.branch-path::before {
+  display: none;
+}
+
+/* Reset base */
+
+/* True Path (Left) */
+.branch-path:first-child::before {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 51%;
+  /* Slight overlap to close pixel gaps */
+  height: 20px;
+  border-top: var(--line-thickness) solid var(--line-color);
+  border-left: var(--line-thickness) solid var(--line-color);
+  border-radius: 8px 0 0 0;
+  /* Rounded corner */
+}
+
+/* False Path (Right) */
+.branch-path:last-child::before {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 51%;
+  height: 20px;
+  border-top: var(--line-thickness) solid var(--line-color);
+  border-right: var(--line-thickness) solid var(--line-color);
+  border-radius: 0 8px 0 0;
+  /* Rounded corner */
+}
+
+/* Dropdown styling */
+.add-button-group {
+  position: relative;
+  /* margin-top: 10px; removed, handled by padding/layout */
+  z-index: 100;
+}
+
+.add-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: #fff;
+  border: 1px solid #ccc;
+  color: #555;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.add-btn:hover {
+  background: #4caf50;
+  color: white;
+  border-color: #4caf50;
+  transform: scale(1.1);
+}
+
+.dropdown {
+  top: 110%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: none;
+  padding: 5px;
+}
+
+.dropdown button {
+  border-radius: 4px;
+  font-size: 14px;
+  color: #333;
+}
+
+.dropdown button:hover {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+/* Labels for Branch Paths */
+.branch-label {
+  background: #fff;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  color: #777;
+  position: absolute;
+  top: -10px;
+  border: 1px solid #eee;
+  z-index: 5;
+  font-weight: 600;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.05);
+}
